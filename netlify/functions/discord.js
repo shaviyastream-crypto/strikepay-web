@@ -12,17 +12,55 @@ export async function handler(event) {
     const webhook = process.env.DISCORD_WEBHOOK_URL;
 
     const message = {
-      content:
-`🩸 **NEW BLOOD STRIKE ORDER**
+      embeds: [
+        {
+          title: "🩸 New Blood Strike Order",
+          color: 16711680,
 
-🆔 Order ID: ${data.orderId}
+          fields: [
+            {
+              name: "🆔 Order ID",
+              value: data.orderId,
+              inline: true,
+            },
+            {
+              name: "👤 Player",
+              value: data.playerName || "-",
+              inline: true,
+            },
+            {
+              name: "🎮 UID",
+              value: data.uid,
+              inline: true,
+            },
+            {
+              name: "💎 Package",
+              value: data.package,
+              inline: false,
+            },
+            {
+              name: "📱 WhatsApp",
+              value: data.whatsapp,
+              inline: false,
+            },
+            {
+              name: "📌 Status",
+              value: "Pending",
+              inline: true,
+            },
+          ],
 
-👤 Player: ${data.playerName}
-🎮 UID: ${data.uid}
-💎 Package: ${data.package}
-📱 WhatsApp: ${data.whatsapp}
+          image: {
+            url: data.slip,
+          },
 
-📌 Status: Pending`
+          footer: {
+            text: "StrikePay LK",
+          },
+
+          timestamp: new Date().toISOString(),
+        },
+      ],
     };
 
     await fetch(webhook, {

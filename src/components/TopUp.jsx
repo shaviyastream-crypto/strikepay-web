@@ -30,6 +30,25 @@ function TopUp() {
     });
   };
 
+const uploadSlip = async () => {
+  const formData = new FormData();
+
+  formData.append("file", paymentSlip);
+  formData.append("upload_preset", "strikepay_slips");
+
+  const res = await fetch(
+    "https://api.cloudinary.com/v1_1/po8of84s/image/upload",
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  const data = await res.json();
+
+  return data.secure_url;
+};
+
  const handleConfirmOrder = async () => {
 
   if (!paymentSlip) {
@@ -43,6 +62,8 @@ function TopUp() {
 
   try {
 
+    const slipUrl = await uploadSlip();
+
     await addDoc(collection(db, "orders"), {
 
       orderId: randomId,
@@ -50,6 +71,7 @@ function TopUp() {
       playerName: playerName,
       package: gamePackage,
       whatsapp: whatsapp,
+      slip: slipUrl,
       status: "Pending",
       createdAt: new Date(),
 
@@ -66,6 +88,7 @@ function TopUp() {
     playerName,
     package: gamePackage,
     whatsapp,
+    slip: slipUrl,
   }),
 });
 
