@@ -665,7 +665,7 @@ color:white;
 background:#2563eb;
 color:#fff;
 border:none;
-padding:10px 16px;
+padding:10px 19px;
 border-radius:8px;
 cursor:pointer;
 margin-bottom:10px;
@@ -712,5 +712,5 @@ width:40px;
 height:40px;
 border-radius:50%;
 cursor:pointer;
-font-size:18px;
+font-size:10px;
 }

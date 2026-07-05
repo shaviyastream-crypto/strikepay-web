@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import {
@@ -12,6 +14,19 @@ function Admin() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedSlip, setSelectedSlip] = useState(null);
+  const navigate = useNavigate();
+
+useEffect(() => {
+  const auth = getAuth();
+
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      navigate("/login");
+    }
+  });
+
+  return () => unsubscribe();
+}, [navigate]);
 
   // ✅ UPDATE STATUS
   const updateStatus = async (id, status) => {
