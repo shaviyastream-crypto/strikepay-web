@@ -55,6 +55,20 @@ function TopUp() {
 
     });
 
+    await fetch("/.netlify/functions/discord", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    orderId: randomId,
+    uid,
+    playerName,
+    package: gamePackage,
+    whatsapp,
+  }),
+});
+
     setOrderSuccess(true);
 
   } catch (error) {
