@@ -190,11 +190,11 @@ const revenue = orders
               </button>
 
               <button
-                 className="slip-btn"
-                onClick={() => setSelectedSlip(order.slipUrl)}
+  className="slip-btn"
+  onClick={() => setSelectedSlip(order.slip)}
 >
-                 📷 View Slip
-              </button>
+  📷 View Slip
+</button>
 
               <button
                 className="delete-btn"
