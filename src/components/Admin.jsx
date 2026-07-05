@@ -14,6 +14,7 @@ function Admin() {
 
   // ✅ UPDATE STATUS
   const updateStatus = async (id, status) => {
+    const [selectedSlip, setSelectedSlip] = useState(null);
     try {
       await updateDoc(doc(db, "orders", id), {
         status: status,
@@ -189,6 +190,13 @@ const revenue = orders
               </button>
 
               <button
+                 className="slip-btn"
+                onClick={() => setSelectedSlip(order.slip)}
+>
+                 📷 View Slip
+              </button>
+
+              <button
                 className="delete-btn"
                 onClick={() => deleteOrder(order.id)}
               >
@@ -199,6 +207,29 @@ const revenue = orders
 
           </div>
         ))}
+
+        {selectedSlip && (
+  <div className="slip-modal">
+
+    <div className="slip-content">
+
+      <button
+        className="close-btn"
+        onClick={() => setSelectedSlip(null)}
+      >
+        ✖
+      </button>
+
+      <img
+        src={selectedSlip}
+        alt="Payment Slip"
+      />
+
+    </div>
+
+  </div>
+)}
+
     </section>
   );
 }
