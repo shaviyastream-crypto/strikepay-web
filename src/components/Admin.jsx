@@ -73,10 +73,57 @@ function Admin() {
     fetchOrders();
   }, []);
 
+  const pending = orders.filter(
+  (o) => o.status === "Pending" || !o.status
+).length;
+
+const completed = orders.filter(
+  (o) => o.status === "Completed"
+).length;
+
+const cancelled = orders.filter(
+  (o) => o.status === "Cancelled"
+).length;
+
+const revenue = orders
+  .filter((o) => o.status === "Completed")
+  .reduce((total, order) => {
+    const price = Number(
+      order.package?.match(/\d+/g)?.pop() || 0
+    );
+    return total + price;
+  }, 0);
+
   return (
+
     <section className="admin">
+
       <h2>Admin Dashboard</h2>
       <p>All Blood Strike Orders</p>
+
+      <div className="stats">
+
+  <div className="stat-card">
+    <h3>🟡 Pending</h3>
+    <h2>{pending}</h2>
+  </div>
+
+  <div className="stat-card">
+    <h3>🟢 Completed</h3>
+    <h2>{completed}</h2>
+  </div>
+
+  <div className="stat-card">
+    <h3>🔴 Cancelled</h3>
+    <h2>{cancelled}</h2>
+  </div>
+
+  <div className="stat-card">
+    <h3>💰 Revenue</h3>
+    <h2>Rs. {revenue}</h2>
+  </div>
+
+</div>
 
       {/* SEARCH */}
       <input
