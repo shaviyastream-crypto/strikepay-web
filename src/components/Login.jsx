@@ -1,11 +1,19 @@
 import { useState } from "react";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
-function Login({ onLogin }) {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    onLogin(email, password);
+  const handleLogin = async () => {
+    const auth = getAuth();
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      alert("Login Successful!");
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   return (

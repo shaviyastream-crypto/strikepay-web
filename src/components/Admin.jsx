@@ -1,10 +1,16 @@
 import { useNavigate } from "react-router-dom";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import {
   collection,
-  getDocs,
+  onSnapshot,
+  query,
+  orderBy,
   doc,
   updateDoc,
   deleteDoc,
@@ -14,7 +20,17 @@ function Admin() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedSlip, setSelectedSlip] = useState(null);
+  const [filter, setFilter] = useState("All");
   const navigate = useNavigate();
+  const handleLogout = async () => {
+  const auth = getAuth();
+
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("Logout Error:", error);
+  }
+};
 
 useEffect(() => {
   const auth = getAuth();
@@ -30,20 +46,41 @@ useEffect(() => {
 
   // ✅ UPDATE STATUS
   const updateStatus = async (id, status) => {
-    try {
-      await updateDoc(doc(db, "orders", id), {
-        status: status,
-      });
+  try {
+    // Order එක හොයාගන්න
+    const order = orders.find((o) => o.id === id);
 
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === id ? { ...order, status } : order
-        )
-      );
-    } catch (error) {
-      console.error("Update Error:", error);
-    }
-  };
+    // Firestore Update
+    await updateDoc(doc(db, "orders", id), {
+      status,
+    });
+
+    // UI Update
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === id ? { ...o, status } : o
+      )
+    );
+
+    // Discord Status Update
+    await fetch("/.netlify/functions/discord-status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orderId: order.orderId,
+        playerName: order.playerName,
+        uid: order.uid,
+        package: order.package,
+        status: status,
+      }),
+    });
+
+  } catch (error) {
+    console.error("Update Error:", error);
+  }
+};
 
   // 🗑 DELETE ORDER
   const deleteOrder = async (id) => {
@@ -67,27 +104,26 @@ useEffect(() => {
 
   // 📥 FETCH ORDERS
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "orders"));
+  const unsubscribe = onSnapshot(
+    query(
+  collection(db, "orders"),
+  orderBy("createdAt", "desc")
+),
+    (snapshot) => {
+      const orderList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-        const orderList = [];
+      setOrders(orderList);
+    },
+    (error) => {
+      console.error("Realtime Error:", error);
+    }
+  );
 
-        querySnapshot.forEach((doc) => {
-          orderList.push({
-            id: doc.id,
-            ...doc.data(),
-          });
-        });
-
-        setOrders(orderList);
-      } catch (error) {
-        console.error("Error loading orders:", error);
-      }
-    };
-
-    fetchOrders();
-  }, []);
+  return () => unsubscribe();
+}, []);
 
   const pending = orders.filter(
   (o) => o.status === "Pending" || !o.status
@@ -114,8 +150,22 @@ const revenue = orders
 
     <section className="admin">
 
-      <h2>Admin Dashboard</h2>
-      <p>All Blood Strike Orders</p>
+      <div className="admin-header">
+
+  <div>
+    <h2>🩸 StrikePay Admin</h2>
+    <p>Manage Blood Strike Orders</p>
+  </div>
+
+  <button
+    className="logout-btn"
+    onClick={handleLogout}
+  >
+    🚪 Logout
+  </button>
+
+</div>
+
 
       <div className="stats">
 
@@ -141,6 +191,26 @@ const revenue = orders
 
 </div>
 
+<div className="filter-buttons">
+
+  <button onClick={() => setFilter("All")}>
+    All
+  </button>
+
+  <button onClick={() => setFilter("Pending")}>
+    🟡 Pending
+  </button>
+
+  <button onClick={() => setFilter("Completed")}>
+    🟢 Completed
+  </button>
+
+  <button onClick={() => setFilter("Cancelled")}>
+    🔴 Cancelled
+  </button>
+
+</div>
+
       {/* SEARCH */}
       <input
         type="text"
@@ -152,16 +222,23 @@ const revenue = orders
 
       {/* ORDERS */}
       {orders
-        .filter((order) => {
-          const text = search.toLowerCase();
+  .filter((order) => {
 
-          return (
-            order.orderId?.toLowerCase().includes(text) ||
-            order.playerName?.toLowerCase().includes(text) ||
-            order.uid?.toLowerCase().includes(text) ||
-            order.whatsapp?.toLowerCase().includes(text)
-          );
-        })
+    if (filter !== "All") {
+      if ((order.status || "Pending") !== filter) {
+        return false;
+      }
+    }
+
+    const text = search.toLowerCase();
+
+    return (
+      order.orderId?.toLowerCase().includes(text) ||
+      order.playerName?.toLowerCase().includes(text) ||
+      order.uid?.toLowerCase().includes(text) ||
+      order.whatsapp?.toLowerCase().includes(text)
+    );
+  })
         .map((order) => (
           <div key={order.id} className="admin-card">
 

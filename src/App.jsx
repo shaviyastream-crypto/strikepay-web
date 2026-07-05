@@ -7,11 +7,27 @@ import Payment from "./components/Payment";
 import TopUp from "./components/TopUp";
 import Admin from "./components/Admin";
 import Footer from "./components/Footer";
-import { useState } from "react";
 import Login from "./components/Login";
+import OrderTracker from "./components/OrderTracker";
+
+import { useEffect, useState } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+
+    const auth = getAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+
+  }, []);
 
   return (
     <>
@@ -21,12 +37,9 @@ function App() {
       <Features />
       <Payment />
       <TopUp />
+      <OrderTracker />
 
-      {isLoggedIn ? (
-        <Admin />
-      ) : (
-        <Login onLogin={() => setIsLoggedIn(true)} />
-      )}
+      {user ? <Admin /> : <Login />}
 
       <Footer />
     </>
