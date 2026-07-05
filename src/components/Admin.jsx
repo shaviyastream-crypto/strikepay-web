@@ -11,10 +11,10 @@ import {
 function Admin() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
+  const [selectedSlip, setSelectedSlip] = useState(null);
 
   // ✅ UPDATE STATUS
   const updateStatus = async (id, status) => {
-    const [selectedSlip, setSelectedSlip] = useState(null);
     try {
       await updateDoc(doc(db, "orders", id), {
         status: status,
@@ -191,7 +191,7 @@ const revenue = orders
 
               <button
                  className="slip-btn"
-                onClick={() => setSelectedSlip(order.slip)}
+                onClick={() => setSelectedSlip(order.slipUrl)}
 >
                  📷 View Slip
               </button>
