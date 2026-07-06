@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db } from "../firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 function TopUp({ setLatestOrderId }) {
   const [uid, setUid] = useState("");
@@ -96,7 +96,7 @@ const copyOrderId = async () => {
       whatsapp: whatsapp,
       slip: slipUrl,
       status: "Pending",
-      createdAt: Date.now(),
+      createdAt: serverTimestamp(),
 
     });
 

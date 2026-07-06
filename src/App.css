@@ -884,3 +884,38 @@ background:#b91c1c;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
+
+.notification-popup{
+position:fixed;
+top:20px;
+right:20px;
+width:300px;
+background:#151d2d;
+border-left:5px solid #22c55e;
+padding:18px;
+border-radius:12px;
+color:#fff;
+box-shadow:0 10px 30px rgba(0,0,0,.45);
+z-index:99999;
+animation:slideIn .35s ease;
+}
+
+.notification-popup h3{
+margin:0 0 10px;
+color:#22c55e;
+}
+
+.notification-popup p{
+margin:4px 0;
+}
+
+@keyframes slideIn{
+from{
+transform:translateX(350px);
+opacity:0;
+}
+to{
+transform:translateX(0);
+opacity:1;
+}
+}

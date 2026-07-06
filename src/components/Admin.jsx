@@ -15,12 +15,15 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
+import notificationSound from "../assets/notification.mp3";
 
 function Admin() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [filter, setFilter] = useState("All");
+  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
   const handleLogout = async () => {
   const auth = getAuth();
@@ -120,6 +123,24 @@ useEffect(() => {
   .filter((order) => !order.archived);
 
 setOrders(orderList);
+
+if (lastOrderCount !== 0 && orderList.length > lastOrderCount) {
+  const latestOrder = orderList[0];
+
+  console.log("NEW ORDER DETECTED", latestOrder);
+
+  setNotification(latestOrder);
+
+const audio = new Audio(notificationSound);
+audio.play();
+
+setTimeout(() => {
+  setNotification(null);
+}, 5000);
+}
+
+setLastOrderCount(orderList.length);
+
     },
     (error) => {
       console.error("Realtime Error:", error);
@@ -378,6 +399,22 @@ const revenueToday = orders
       />
 
     </div>
+
+  </div>
+)}
+
+{notification && (
+  <div className="notification-popup">
+
+    <h3>🔔 New Order</h3>
+
+    <p>
+      <strong>{notification.orderId}</strong>
+    </p>
+
+    <p>{notification.playerName}</p>
+
+    <p>{notification.package}</p>
 
   </div>
 )}
