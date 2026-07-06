@@ -150,7 +150,43 @@ const revenue = orders
     return total + price;
   }, 0);
 
+const today = new Date().toDateString();
+
+const ordersToday = orders.filter((order) => {
+  if (!order.createdAt) return false;
+
+  const date =
+    order.createdAt.seconds
+      ? new Date(order.createdAt.seconds * 1000)
+      : new Date(order.createdAt);
+
+  return date.toDateString() === today;
+}).length;
+
+const revenueToday = orders
+  .filter((order) => {
+    if (!order.createdAt) return false;
+
+    const date =
+      order.createdAt.seconds
+        ? new Date(order.createdAt.seconds * 1000)
+        : new Date(order.createdAt);
+
+    return (
+      date.toDateString() === today &&
+      order.status === "Completed"
+    );
+  })
+  .reduce((total, order) => {
+    const price = Number(
+      order.package?.match(/\d+/g)?.pop() || 0
+    );
+
+    return total + price;
+  }, 0);
+
   return (
+
 
     <section className="admin">
 
@@ -193,6 +229,16 @@ const revenue = orders
     <h2>Rs. {revenue}</h2>
   </div>
 
+</div>
+
+<div className="stat-card">
+  <h3>📦 Orders Today</h3>
+  <h2>{ordersToday}</h2>
+</div>
+
+<div className="stat-card">
+  <h3>💰 Today Revenue</h3>
+  <h2>Rs. {revenueToday}</h2>
 </div>
 
 <div className="filter-buttons">
@@ -252,6 +298,16 @@ const revenue = orders
             <p>🎮 UID: {order.uid}</p>
             <p>💎 {order.package}</p>
             <p>📱 {order.whatsapp}</p>
+            <p>
+  🕒{" "}
+  {order.createdAt
+    ? (
+        order.createdAt.seconds
+          ? new Date(order.createdAt.seconds * 1000)
+          : new Date(order.createdAt)
+      ).toLocaleString()
+    : "No Date"}
+</p>
 
             {/* STATUS */}
             <p

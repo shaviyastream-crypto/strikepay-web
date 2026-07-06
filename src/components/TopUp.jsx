@@ -96,7 +96,7 @@ const copyOrderId = async () => {
       whatsapp: whatsapp,
       slip: slipUrl,
       status: "Pending",
-      createdAt: new Date(),
+      createdAt: Date.now(),
 
     });
 
