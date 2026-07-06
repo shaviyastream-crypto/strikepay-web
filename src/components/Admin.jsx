@@ -83,24 +83,26 @@ useEffect(() => {
 };
 
   // 🗑 DELETE ORDER
-  const deleteOrder = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this order?"
+  const archiveOrder = async (id) => {
+  const confirmArchive = window.confirm(
+    "Archive this order?"
+  );
+
+  if (!confirmArchive) return;
+
+  try {
+    await updateDoc(doc(db, "orders", id), {
+      archived: true,
+    });
+
+    setOrders((prev) =>
+      prev.filter((order) => order.id !== id)
     );
-
-    if (!confirmDelete) return;
-
-    try {
-      await deleteDoc(doc(db, "orders", id));
-
-      setOrders((prev) =>
-        prev.filter((order) => order.id !== id)
-      );
-    } catch (error) {
-      console.error("Delete Error:", error);
-      alert("Failed to delete order");
-    }
-  };
+  } catch (error) {
+    console.error(error);
+    alert("Failed to archive order");
+  }
+};
 
   // 📥 FETCH ORDERS
   useEffect(() => {
@@ -110,12 +112,14 @@ useEffect(() => {
   orderBy("createdAt", "desc")
 ),
     (snapshot) => {
-      const orderList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const orderList = snapshot.docs
+  .map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }))
+  .filter((order) => !order.archived);
 
-      setOrders(orderList);
+setOrders(orderList);
     },
     (error) => {
       console.error("Realtime Error:", error);
@@ -289,11 +293,11 @@ const revenue = orders
 </button>
 
               <button
-                className="delete-btn"
-                onClick={() => deleteOrder(order.id)}
-              >
-                🗑 Delete
-              </button>
+  className="archive-btn"
+  onClick={() => archiveOrder(order.id)}
+>
+  📦 Archive
+</button>
 
             </div>
 

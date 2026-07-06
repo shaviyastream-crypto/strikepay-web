@@ -2,7 +2,7 @@ import { useState } from "react";
 import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
 
-function TopUp() {
+function TopUp({ setLatestOrderId }) {
   const [uid, setUid] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [gamePackage, setGamePackage] = useState("");
@@ -49,6 +49,28 @@ const uploadSlip = async () => {
   return data.secure_url;
 };
 
+const copyOrderId = async () => {
+  try {
+    await navigator.clipboard.writeText(orderId);
+    alert("✅ Order ID Copied!");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+  const checkMyOrder = () => {
+  setOrderSuccess(false);
+
+  const tracker = document.querySelector(".tracker");
+
+  if (tracker) {
+    tracker.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+};
+
  const handleConfirmOrder = async () => {
 
   if (!paymentSlip) {
@@ -59,6 +81,7 @@ const uploadSlip = async () => {
   const randomId = "SP-" + Math.floor(1000 + Math.random() * 9000);
 
   setOrderId(randomId);
+  setLatestOrderId(randomId);
 
   try {
 
@@ -93,6 +116,13 @@ const uploadSlip = async () => {
 });
 
     setOrderSuccess(true);
+
+    setUid("");
+    setPlayerName("");
+    setGamePackage("");
+    setWhatsapp("");
+    setPaymentSlip(null);
+    setShowSummary(false);
 
   } catch (error) {
 
@@ -182,13 +212,14 @@ const uploadSlip = async () => {
   <div className="success-card">
 
     <h2>🎉 Order Submitted!</h2>
-    <p>
-  <strong>Order ID:</strong> {orderId}
-</p>
 
-<p>
-  <strong>Status:</strong> Pending
-</p>
+    <p>
+      <strong>Order ID:</strong> {orderId}
+    </p>
+
+    <p>
+      <strong>Status:</strong> Pending
+    </p>
 
     <p>
       Thank you for your order.
@@ -197,6 +228,24 @@ const uploadSlip = async () => {
     <p>
       We will verify your payment and complete your top up soon.
     </p>
+
+    <div className="success-buttons">
+
+      <button
+        className="copy-order-btn"
+        onClick={copyOrderId}
+      >
+        📋 Copy Order ID
+      </button>
+
+      <button
+        className="check-order-btn"
+        onClick={checkMyOrder}
+      >
+        🔍 Check My Order
+      </button>
+
+    </div>
 
   </div>
 

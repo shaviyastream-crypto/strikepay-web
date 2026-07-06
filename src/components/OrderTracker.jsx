@@ -1,60 +1,106 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import {
   collection,
   query,
   where,
-  getDocs,
+  onSnapshot,
 } from "firebase/firestore";
 
-function OrderTracker() {
+function OrderTracker({ latestOrderId }) {
   const [orderId, setOrderId] = useState("");
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const checkOrder = async () => {
-    if (!orderId) return;
-
-    setLoading(true);
-    setOrder(null);
+  // 📋 Copy Order ID
+  const copyOrderId = async () => {
+    if (!order) return;
 
     try {
-      const q = query(
-        collection(db, "orders"),
-        where("orderId", "==", orderId.trim())
-      );
-
-      const snapshot = await getDocs(q);
-
-      if (!snapshot.empty) {
-        setOrder(snapshot.docs[0].data());
-      } else {
-        setOrder("NOT_FOUND");
-      }
+      await navigator.clipboard.writeText(order.orderId);
+      alert("✅ Order ID Copied");
     } catch (err) {
       console.error(err);
     }
-
-    setLoading(false);
   };
+
+  // 🔍 Check Order (Realtime)
+  const checkOrder = () => {
+    if (!orderId.trim()) {
+      setOrder(null);
+      return () => {};
+    }
+
+    setLoading(true);
+
+    const q = query(
+      collection(db, "orders"),
+      where("orderId", "==", orderId.trim())
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setOrder(snapshot.docs[0].data());
+        } else {
+          setOrder("NOT_FOUND");
+        }
+
+        setLoading(false);
+      },
+      (err) => {
+        console.error(err);
+        setLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  };
+
+  // Auto fill latest Order ID
+  useEffect(() => {
+    if (latestOrderId) {
+      setOrderId(latestOrderId);
+    }
+  }, [latestOrderId]);
+
+  // Auto check when Order ID changes
+  useEffect(() => {
+    if (!orderId.trim()) return;
+
+    const unsubscribe = checkOrder();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [orderId]);
 
   return (
     <section className="tracker">
-
       <h2>📦 Check Order Status</h2>
 
       <input
         type="text"
-        placeholder="Enter Order ID"
+        placeholder="🔍 Enter Order ID"
         value={orderId}
         onChange={(e) => setOrderId(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            checkOrder();
+          }
+        }}
       />
 
       <button onClick={checkOrder}>
         Check Status
       </button>
 
-      {loading && <p>Checking...</p>}
+      {loading && (
+        <p className="checking">
+          ⏳ Checking your order...
+        </p>
+      )}
 
       {order === "NOT_FOUND" && (
         <p style={{ color: "red" }}>
@@ -65,31 +111,35 @@ function OrderTracker() {
       {order && order !== "NOT_FOUND" && (
         <div className="tracker-result">
 
-          <h3>{order.orderId}</h3>
+          <div className="tracker-title">
+            <h3>{order.orderId}</h3>
+
+            <button
+              className="copy-btn"
+              onClick={copyOrderId}
+            >
+              📋 Copy
+            </button>
+          </div>
 
           <p>👤 {order.playerName}</p>
-
           <p>🎮 UID: {order.uid}</p>
-
           <p>💎 {order.package}</p>
 
-          <p
-            style={{
-              color:
-                order.status === "Completed"
-                  ? "#22c55e"
-                  : order.status === "Cancelled"
-                  ? "#ef4444"
-                  : "#facc15",
-              fontWeight: "bold",
-            }}
+          <div
+            className={`status-badge ${
+              order.status === "Completed"
+                ? "completed"
+                : order.status === "Cancelled"
+                ? "cancelled"
+                : "pending"
+            }`}
           >
-            📌 {order.status}
-          </p>
+            {order.status || "Pending"}
+          </div>
 
         </div>
       )}
-
     </section>
   );
 }

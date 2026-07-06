@@ -15,6 +15,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 function App() {
 
+  const [latestOrderId, setLatestOrderId] = useState("");
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -36,8 +37,8 @@ function App() {
       <Packages />
       <Features />
       <Payment />
-      <TopUp />
-      <OrderTracker />
+      <TopUp setLatestOrderId={setLatestOrderId} />
+      <OrderTracker latestOrderId={latestOrderId} />
 
       {user ? <Admin /> : <Login />}
 
