@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import emailjs from "@emailjs/browser";
 
-function TopUp({ setLatestOrderId }) {
+function TopUp({
+  setLatestOrderId,
+  selectedPackage,
+}) {
   const [uid, setUid] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [gamePackage, setGamePackage] = useState("");
@@ -14,6 +17,79 @@ function TopUp({ setLatestOrderId }) {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [totalGold, setTotalGold] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
+
+useEffect(() => {
+  if (selectedPackage) {
+    setGamePackage(selectedPackage);
+  }
+}, [selectedPackage]);
+
+    const isStrikePass =
+  gamePackage === "Strike Pass Elite" ||
+  gamePackage === "Strike Pass Premium";
+
+    useEffect(() => {
+
+ const packages = {
+  "50 + 6 Golds": {
+    gold: 56,
+    price: 175,
+  },
+  "100 + 16 Golds": {
+    gold: 116,
+    price: 350,
+  },
+  "300 + 52 Golds": {
+    gold: 352,
+    price: 1050,
+  },
+  "500 + 94 Golds": {
+    gold: 594,
+    price: 1750,
+  },
+  "1000 + 210 Golds": {
+    gold: 1210,
+    price: 3500,
+  },
+  "2000 + 486 Golds": {
+    gold: 2486,
+    price: 7000,
+  },
+  "5000 + 1380 Golds": {
+    gold: 6380,
+    price: 17500,
+  },
+  "Strike Pass Elite": {
+    gold: 0,
+    price: 1400,
+  },
+  "Strike Pass Premium": {
+    gold: 0,
+    price: 3150,
+  },
+};
+
+
+  if(gamePackage && packages[gamePackage]){
+
+    const selected = packages[gamePackage];
+
+    setTotalGold(selected.gold * quantity);
+
+    setTotalPrice(selected.price * quantity);
+
+  }else{
+
+    setTotalGold(0);
+    setTotalPrice(0);
+
+  }
+
+}, [gamePackage, quantity]);
 
   const handleSubmit = () => {
     if (
@@ -28,6 +104,7 @@ function TopUp({ setLatestOrderId }) {
 
     setMessage("");
     setShowSummary(true);
+    setLoading(false);
 
     console.log({
       uid,
@@ -89,24 +166,25 @@ const copyOrderId = async () => {
 
   setOrderId(randomId);
   setLatestOrderId(randomId);
+  setOrderSuccess(true);
+  setLoading(true);
 
   try {
 
     const slipUrl = await uploadSlip();
 
     await addDoc(collection(db, "orders"), {
-
-      orderId: randomId,
-      uid: uid,
-      playerName: playerName,
-      package: gamePackage,
-      whatsapp: whatsapp,
-      email: email,
-      slip: slipUrl,
-      status: "Pending",
-      createdAt: serverTimestamp(),
-
-    });
+  orderId: randomId,
+  uid: uid,
+  playerName: playerName,
+  email: email,
+  package: gamePackage,
+  quantity: quantity,
+  whatsapp: whatsapp,
+  slip: slipUrl,
+  status: "Pending",
+  createdAt: serverTimestamp(),
+});
 
     await emailjs.send(
   "service_aplvnsj",
@@ -117,24 +195,29 @@ const copyOrderId = async () => {
     order_id: randomId,
     uid: uid,
     package: gamePackage,
+    whatsapp: whatsapp,
   },
   "ZwiLIZoXfEYAsk8Za"
 );
 
-    await fetch("/.netlify/functions/discord", {
+
+    const discordRes = await fetch("/.netlify/functions/discord", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    orderId: randomId,
-    uid,
-    playerName,
-    package: gamePackage,
-    whatsapp,
-    slip: slipUrl,
-  }),
+  orderId: randomId,
+  uid,
+  playerName,
+  package: gamePackage,
+  quantity,
+  whatsapp,
+  slip: slipUrl,
+}),
 });
+
+console.log("Discord:", discordRes.status);
 
     setOrderSuccess(true);
 
@@ -145,18 +228,22 @@ const copyOrderId = async () => {
     setEmail("");
     setPaymentSlip(null);
     setShowSummary(false);
+    setLoading(false);
+    setQuantity(1);
 
-  } catch (error) {
-
-    console.error(error);
-
-    alert("Failed to save order.");
-
-  }
+} 
+  
+  catch (error) {
+  console.error("ERROR:", error);
+  alert(error.text || error.message);
+}
 
 };
   return (
-    <section className="topup">
+    <section
+  className="topup"
+  id="topup"
+>
       <h2>Blood Strike Top Up</h2>
 
       <form className="topup-form">
@@ -181,16 +268,76 @@ const copyOrderId = async () => {
            onChange={(e) => setEmail(e.target.value)}
         />
 
-        <select
-          value={gamePackage}
-          onChange={(e) => setGamePackage(e.target.value)}
+         <select
+  value={gamePackage}
+  onChange={(e) => setGamePackage(e.target.value)}
+>
+  <option value="">Select Package</option>
+
+  <option>50 + 6 Golds</option>
+  <option>100 + 16 Golds</option>
+  <option>300 + 52 Golds</option>
+  <option>500 + 94 Golds</option>
+  <option>1000 + 210 Golds</option>
+  <option>2000 + 486 Golds</option>
+  <option>5000 + 1380 Golds</option>
+  <option>Strike Pass Elite</option>
+  <option>Strike Pass Premium</option>
+</select>
+
+        {gamePackage && !isStrikePass && (
+  <>
+    <p className="quantity-hint">
+      💡 Need more Gold? Increase quantity below.
+    </p>
+
+    <div className="quantity-box">
+
+      <h4>Quantity</h4>
+
+      <div className="quantity-controls">
+
+        <button
+          type="button"
+          onClick={() =>
+            setQuantity(quantity > 1 ? quantity - 1 : 1)
+          }
         >
-          <option value="">Select Package</option>
-          <option>100 Gold - Rs.280</option>
-          <option>300 Gold - Rs.780</option>
-          <option>500 Gold - Rs.1250</option>
-          <option>1000 Gold - Rs.2450</option>
-        </select>
+          -
+        </button>
+
+        <span>{quantity}</span>
+
+        <button
+          type="button"
+          onClick={() =>
+            setQuantity(quantity + 1)
+          }
+        >
+          +
+        </button>
+
+      </div>
+
+
+      <div className="total-box">
+
+        <p>
+          🪙 Total Gold:
+          <b> {totalGold} Golds</b>
+        </p>
+
+        <p>
+          💰 Total Price:
+         <b> Rs. {totalPrice.toLocaleString()}</b>
+        </p>
+
+      </div>
+
+
+    </div>
+  </>
+)}
 
         <input
           type="tel"
@@ -221,6 +368,7 @@ const copyOrderId = async () => {
           <p><b>Player:</b> {playerName}</p>
           <p><b>Package:</b> {gamePackage}</p>
           <p><b>WhatsApp:</b> {whatsapp}</p>
+          <p><b>Quantity:</b> {quantity}</p>
 
           <input
             type="file"
@@ -231,8 +379,9 @@ const copyOrderId = async () => {
           <button
             type="button"
             onClick={handleConfirmOrder}
-          >
-            Confirm Order
+            disabled={loading}
+>
+            {loading ? "⏳ Processing..." : "Confirm Order"}
           </button>
         </div>
       )}

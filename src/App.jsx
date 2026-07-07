@@ -17,6 +17,7 @@ function App() {
 
   const [latestOrderId, setLatestOrderId] = useState("");
   const [user, setUser] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState("");
 
   useEffect(() => {
 
@@ -33,12 +34,23 @@ function App() {
   return (
     <>
       <Navbar />
+
       <Hero />
-      <Packages />
+
+      <Packages setSelectedPackage={setSelectedPackage} />
+
       <Features />
+
       <Payment />
-      <TopUp setLatestOrderId={setLatestOrderId} />
-      <OrderTracker latestOrderId={latestOrderId} />
+      
+      <TopUp
+        setLatestOrderId={setLatestOrderId}
+          selectedPackage={selectedPackage}
+      />
+
+      <OrderTracker 
+         latestOrderId={latestOrderId}
+      />
 
       {user ? <Admin /> : <Login />}
 

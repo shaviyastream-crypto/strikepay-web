@@ -1,6 +1,6 @@
 function Footer() {
   return (
-    <footer className="footer">
+    <footer className="footer" id="support">
 
       <h2>StrikePay LK</h2>
 

@@ -1,4 +1,7 @@
 
+html{
+    scroll-behavior:smooth;
+}
 
 * {
   margin: 0;
@@ -58,16 +61,18 @@ button:hover {
 /* NAVBAR */
 
 .navbar{
+    position:fixed;
+    top:0;
+    left:0;
     width:100%;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:15px 50px;
-    background:#111827;
-    position:fixed;
-    top:0;
-    left:0;
-    z-index:999;
+    padding:18px 60px;
+    background:rgba(17,24,39,.85);
+    backdrop-filter:blur(12px);
+    z-index:9999;
+    border-bottom:1px solid rgba(255,255,255,.08);
 }
 
 .logo{
@@ -79,17 +84,24 @@ button:hover {
 .nav-links{
     display:flex;
     list-style:none;
-    gap:35px;
+    gap:25px;
 }
 
-.nav-links a{
+.nav-links button{
+    background:none;
+    border:none;
     color:white;
-    text-decoration:none;
-    transition:.9s;
+    cursor:pointer;
+    font-size:16px;
+    padding:0;
+    margin:0;
+    transition:.3s;
 }
 
-.nav-links a:hover{
+.nav-links button:hover{
     color:#38bdf8;
+    transform:none;
+    box-shadow:none;
 }
 
 .login-btn{
@@ -126,6 +138,10 @@ button:hover {
     padding:30px;
     text-align:center;
     transition:.3s;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
 }
 
 .card:hover{
@@ -146,6 +162,11 @@ button:hover {
 .card button{
     width:100%;
     margin-top:15px;
+}
+
+.package-image{
+    width:170px;
+    height:170px;
 }
 
 /* FEATURES */
@@ -393,6 +414,7 @@ button:hover {
 
     margin-bottom:20px;
 
+    font-size:40px;
 }
 
 .success-card p{
@@ -403,61 +425,150 @@ button:hover {
 
     margin-top:10px;
 
+    .success-card strong{
+
+    color:#facc15;
+
+    font-size:22px;
+
+}
+
+}
+
+.success-card{
+
+    max-width:700px;
+
+    margin:40px auto;
+
+    padding:40px;
+
+    background:#14532d;
+
+    border-radius:18px;
+
+    text-align:center;
+
+    animation: successPop .5s ease;
+}
+
+@keyframes successPop{
+
+    0%{
+        opacity:0;
+        transform:scale(.7);
+    }
+
+    60%{
+        transform:scale(1.05);
+    }
+
+    100%{
+        opacity:1;
+        transform:scale(1);
+    }
+
 }
 
 /* HERO */
 
 .hero{
+
     min-height:100vh;
+
     display:flex;
-    flex-direction:column;
     justify-content:center;
     align-items:center;
+
     text-align:center;
-    padding:120px 20px 80px;
-    background:linear-gradient(180deg,#0f172a 0%,#111827 60%,#1e293b 100%);
+
+    padding:120px 20px;
+
+    position:relative;
+
+    background:
+    linear-gradient(
+      rgba(15,23,42,.75),
+      rgba(15,23,42,.95)
+    ),
+    url("https://images.unsplash.com/photo-1542751371-adc38448a05e");
+
+    background-size:cover;
+    background-position:center;
+
 }
+
+
+.hero-content{
+
+    max-width:900px;
+
+    animation:fadeUp 1.5s ease;
+
+}
+
 
 .hero h1{
+
     font-size:100px;
+
     font-weight:900;
+
+    letter-spacing:5px;
+
     color:#38bdf8;
-    margin-bottom:100px;
-    animation:fadeUp 2s ease;
+
+    text-shadow:
+    0 0 20px #38bdf8,
+    0 0 40px #38bdf8;
+
+    margin-bottom:20px;
+
 }
+
 
 .hero h2{
-    font-size:30px;
-    font-weight:700;
-    color:#ffffff;
-    margin-bottom: 10px;
+
+    font-size:35px;
+
+    color:white;
+
+    margin-bottom:20px;
+
 }
+
 
 .hero p{
-    max-width:650px;
+
+    font-size:22px;
+
     color:#cbd5e1;
-    font-size:20px;
-    line-height:1.8;
-    margin-bottom:35px;
+
+    margin-bottom:40px;
+
 }
+
 
 .hero button{
+
     background:#22c55e;
-    color:white;
-    border:none;
-    padding:18px 45px;
-    border-radius:12px;
-    font-size:20px;
-    font-weight:700;
-    cursor:pointer;
-    transition:.3s ease;
-    box-shadow:0 10px 30px rgba(34,197,94,.35);
+
+    padding:18px 50px;
+
+    font-size:22px;
+
+    border-radius:50px;
+
+    box-shadow:
+    0 0 20px rgba(34,197,94,.6);
+
 }
 
+
 .hero button:hover{
-    background:#16a34a;
-    transform:translateY(-4px);
-    box-shadow:0 15px 35px rgba(34,197,94,.45);
+
+    transform:scale(1.08);
+
 }
 
 @keyframes fadeUp{
@@ -918,4 +1029,474 @@ to{
 transform:translateX(0);
 opacity:1;
 }
+}
+
+.tracker-progress{
+display:flex;
+justify-content:space-between;
+margin-top:20px;
+gap:10px;
+}
+
+.step{
+flex:1;
+padding:12px;
+text-align:center;
+border-radius:10px;
+background:#1e293b;
+color:#888;
+font-weight:bold;
+transition:.3s;
+}
+
+.step.active{
+background:#facc15;
+color:#000;
+}
+
+.step.done{
+background:#22c55e;
+color:white;
+}
+
+.step.cancel{
+background:#ef4444;
+color:white;
+}
+
+/* ==========================
+   SUCCESS CARD
+========================== */
+
+.success-buttons{
+display:flex;
+gap:15px;
+margin-top:25px;
+flex-wrap:wrap;
+justify-content:center;
+}
+
+.copy-order-btn,
+.check-order-btn{
+flex:1;
+min-width:220px;
+padding:14px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+transition:.3s;
+}
+
+.copy-order-btn{
+background:#2563eb;
+color:white;
+}
+
+.copy-order-btn:hover{
+background:#1d4ed8;
+}
+
+.check-order-btn{
+background:#22c55e;
+color:white;
+}
+
+.check-order-btn:hover{
+background:#16a34a;
+}
+
+/* ==========================
+   ORDER TRACKER
+========================== */
+
+.tracker-title{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+gap:10px;
+}
+
+.copy-btn{
+background:#2563eb;
+color:white;
+border:none;
+padding:8px 15px;
+border-radius:8px;
+cursor:pointer;
+font-size:14px;
+}
+
+.copy-btn:hover{
+background:#1d4ed8;
+}
+
+.status-badge{
+display:inline-block;
+margin-top:15px;
+padding:10px 18px;
+border-radius:999px;
+font-weight:bold;
+}
+
+.status-badge.pending{
+background:#facc15;
+color:#000;
+}
+
+.status-badge.completed{
+background:#22c55e;
+color:#fff;
+}
+
+.status-badge.cancelled{
+background:#ef4444;
+color:#fff;
+}
+
+/* ==========================
+   PROGRESS BAR
+========================== */
+
+.tracker-progress{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:25px;
+gap:10px;
+}
+
+.step{
+flex:1;
+padding:14px;
+border-radius:10px;
+background:#1f2937;
+color:#888;
+font-weight:bold;
+text-align:center;
+transition:.3s;
+}
+
+.step.active{
+background:#facc15;
+color:#000;
+}
+
+.step.done{
+background:#22c55e;
+color:#fff;
+}
+
+.step.cancel{
+background:#ef4444;
+color:#fff;
+}
+
+@media(max-width:768px){
+
+.hero h1{
+
+font-size:55px;
+
+}
+
+.hero h2{
+
+font-size:24px;
+
+}
+
+.hero p{
+
+font-size:16px;
+
+}
+
+}
+
+/* PREMIUM PACKAGE */
+
+.card{
+position:relative;
+overflow:hidden;
+}
+
+.popular-card{
+border:2px solid #facc15;
+box-shadow:0 0 30px rgba(250,204,21,.35);
+}
+
+.popular-card:hover{
+transform:translateY(-12px) scale(1.03);
+}
+
+.popular-badge{
+
+position:absolute;
+
+top:15px;
+
+right:-38px;
+
+background:#facc15;
+
+color:#111827;
+
+padding:8px 45px;
+
+font-size:13px;
+
+font-weight:bold;
+
+transform:rotate(45deg);
+
+}
+
+.diamond-icon{
+
+font-size:60px;
+
+margin-bottom:15px;
+
+animation:diamondFloat 2.5s ease-in-out infinite;
+
+}
+
+@keyframes diamondFloat{
+
+0%{
+transform:translateY(0);
+}
+
+50%{
+transform:translateY(-8px);
+}
+
+100%{
+transform:translateY(0);
+}
+
+}
+
+.card button{
+
+background:linear-gradient(90deg,#22c55e,#16a34a);
+
+font-weight:bold;
+
+}
+
+.card button:hover{
+
+transform:scale(1.05);
+
+}
+
+.package-image{
+    width:120px;
+    height:120px;
+    object-fit:contain;
+    margin-bottom:20px;
+    transition:.3s;
+}
+
+.card:hover .package-image{
+    transform:scale(1.08);
+}
+
+.card h3{
+    margin-top:10px;
+    font-size:22px;
+}
+
+.package-image{
+    width:140px;
+    height:140px;
+    object-fit:contain;
+    display:block;
+    margin:0 auto 20px;
+}
+
+.quantity-box{
+  margin:20px 0;
+  text-align:center;
+}
+
+.quantity-controls{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:15px;
+}
+
+.quantity-controls button{
+  width:45px;
+  height:45px;
+  border:none;
+  border-radius:10px;
+  background:#22c55e;
+  color:white;
+  font-size:24px;
+  cursor:pointer;
+}
+
+.quantity-controls span{
+  min-width:40px;
+  font-size:24px;
+  font-weight:bold;
+  color:white;
+}
+
+.quantity-hint{
+    color:#38bdf8;
+    margin-top:15px;
+    font-size:15px;
+}
+
+.quantity-box{
+    margin:20px 0;
+    text-align:center;
+}
+
+.quantity-box h4{
+    margin-bottom:10px;
+    color:white;
+}
+
+.quantity-controls{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:20px;
+}
+
+.quantity-controls button{
+    width:45px;
+    height:45px;
+    padding:0;
+    margin:0;
+    border-radius:50%;
+    font-size:25px;
+    background:#22c55e;
+}
+
+.quantity-controls span{
+    font-size:25px;
+    font-weight:bold;
+    min-width:40px;
+}
+
+.total-box{
+    margin-top:20px;
+    padding:15px;
+    background:#1e293b;
+    border-radius:12px;
+    border:1px solid #38bdf8;
+}
+
+.total-box p{
+    font-size:18px;
+    margin:10px;
+    color:white;
+}
+
+.total-box b{
+    color:#22c55e;
+}
+
+.card{
+    position:relative;
+    overflow:hidden;
+}
+
+.package-badge{
+    position:absolute;
+    top:15px;
+    right:-45px;
+    background:#f59e0b;
+    color:#fff;
+    padding:8px 55px;
+    font-size:13px;
+    font-weight:bold;
+    transform:rotate(45deg);
+    box-shadow:0 5px 15px rgba(0,0,0,.35);
+    z-index:10;
+}
+
+/* PAYMENT IMAGE */
+
+.payment-image{
+    width:120px;
+    height:120px;
+    object-fit:contain;
+    display:block;
+    margin:0 auto 20px;
+}
+
+.payment-card{
+    background:#1d2a44;
+    padding:35px;
+    border-radius:18px;
+    text-align:center;
+    transition:.3s;
+    border:1px solid transparent;
+}
+
+.payment-card:hover{
+    transform:translateY(-8px);
+    border-color:#38bdf8;
+}
+
+.active{
+    color:#22c55e;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+.coming{
+    color:#facc15;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+.bank-details{
+background:#111827;
+padding:35px;
+border-radius:18px;
+margin-top:40px;
+text-align:center;
+border:1px solid #334155;
+}
+
+.bank-details h3{
+margin-bottom:25px;
+color:#38bdf8;
+}
+
+.bank-details p{
+margin:18px 0;
+font-size:17px;
+line-height:1.8;
+}
+
+.bank-details button{
+margin-top:20px;
+background:#22c55e;
+padding:14px 28px;
+border:none;
+border-radius:10px;
+color:white;
+cursor:pointer;
+font-size:17px;
+}
+
+.bank-details button:hover{
+background:#16a34a;
+}
+
+.payment-note{
+margin-top:25px;
+color:#facc15;
+font-weight:bold;
 }

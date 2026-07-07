@@ -16,6 +16,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import notificationSound from "../assets/notification.mp3";
+import emailjs from "@emailjs/browser";
 
 function Admin() {
   const [orders, setOrders] = useState([]);
@@ -58,6 +59,29 @@ useEffect(() => {
     await updateDoc(doc(db, "orders", id), {
       status,
     });
+
+    if (status === "Completed") {
+      console.log(order);
+      console.log("EMAIL:", order.email);
+  try {
+    await emailjs.send(
+      "service_aplvnsj",
+      "template_an4c8rw",
+      {
+        to_email: order.email,
+        player_name: order.playerName,
+        order_id: order.orderId,
+        uid: order.uid,
+        package: order.package,
+      },
+      "ZwiLIZoXfEYAsk8Za"
+    );
+
+    console.log("✅ Completion email sent");
+  } catch (error) {
+    console.error("❌ Email Error:", error);
+  }
+}
 
     // UI Update
     setOrders((prev) =>
@@ -109,53 +133,76 @@ useEffect(() => {
 };
 
   // 📥 FETCH ORDERS
-  useEffect(() => {
+  // 📥 FETCH ORDERS
+useEffect(() => {
+
   const unsubscribe = onSnapshot(
     query(
-  collection(db, "orders"),
-  orderBy("createdAt", "desc")
-),
+      collection(db, "orders"),
+      orderBy("createdAt", "desc")
+    ),
+
     (snapshot) => {
 
-      console.log("SNAPSHOT FIRED");
-
       const orderList = snapshot.docs
-  .map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }))
-  .filter((order) => !order.archived);
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((order) => !order.archived);
 
-setOrders(orderList);
-console.log("Orders:", orderList.length);
-console.log(orderList);
+      setOrders(orderList);
 
-if (isFirstLoad) {
+      if (isFirstLoad) {
   setIsFirstLoad(false);
-} else if (snapshot.docChanges().some(change => change.type === "added")) {
+} else {
+  const added = snapshot.docChanges().find(
+    (change) => change.type === "added"
+  );
 
+  if (added) {
+    const latestOrder = {
+      id: added.doc.id,
+      ...added.doc.data(),
+    };
 
-  console.log("NEW ORDER DETECTED", latestOrder);
+    setNotification(latestOrder);
 
-  setNotification(latestOrder);
+    const audio = new Audio(notificationSound);
 
-const audio = new Audio(notificationSound);
-audio.play();
+    audio.play().catch((err) => {
+      console.log(err);
+    });
 
-setTimeout(() => {
-  setNotification(null);
-}, 5000);
+    setTimeout(() => {
+      setNotification(null);
+    }, 5000);
+  }
 }
 
-
     },
+
     (error) => {
-      console.error("Realtime Error:", error);
+      console.error(error);
     }
+
   );
 
   return () => unsubscribe();
-}, []);
+
+}, [isFirstLoad]);
+
+const packagePrices = {
+  "50 + 6 Golds": 175,
+  "100 + 16 Golds": 350,
+  "300 + 52 Golds": 1050,
+  "500 + 94 Golds": 1750,
+  "1000 + 210 Golds": 3500,
+  "2000 + 486 Golds": 7000,
+  "5000 + 1380 Golds": 17500,
+  "Strike Pass Elite": 1400,
+  "Strike Pass Premium": 3150,
+};
 
   const pending = orders.filter(
   (o) => o.status === "Pending" || !o.status
@@ -169,14 +216,23 @@ const cancelled = orders.filter(
   (o) => o.status === "Cancelled"
 ).length;
 
-const revenue = orders
-  .filter((o) => o.status === "Completed")
-  .reduce((total, order) => {
-    const price = Number(
-      order.package?.match(/\d+/g)?.pop() || 0
-    );
-    return total + price;
-  }, 0);
+const revenue = orders .
+filter((o) => o.status === "Completed") 
+.reduce((total, order) => { 
+  const price = Number( 
+    order.package?.match(/\d+/g)?.pop() || 0 ); 
+    return total + price; }, 0);
+
+    const totalRevenue = orders.reduce((total, order) => {
+  const price = packagePrices[order.package] || 0;
+  const quantity = order.quantity || 1;
+
+  if (order.status === "Completed") {
+    return total + price * quantity;
+  }
+
+  return total;
+}, 0);
 
 const today = new Date().toDateString();
 
@@ -205,13 +261,9 @@ const revenueToday = orders
       order.status === "Completed"
     );
   })
-  .reduce((total, order) => {
-    const price = Number(
-      order.package?.match(/\d+/g)?.pop() || 0
-    );
-
-    return total + price;
-  }, 0);
+  .reduce((total, order) => { 
+    const price = Number( order.package?.match(/\d+/g)?.pop() || 0 ); 
+    return total + price; }, 0)
 
   return (
 
@@ -257,6 +309,13 @@ const revenueToday = orders
     <h2>Rs. {revenue}</h2>
   </div>
 
+  <div className="stat-card">
+  <h3>Total Revenue</h3>
+  <h2>
+    Rs. {totalRevenue.toLocaleString()}
+  </h2>
+</div>
+
 </div>
 
 <div className="stat-card">
@@ -266,8 +325,8 @@ const revenueToday = orders
 
 <div className="stat-card">
   <h3>💰 Today Revenue</h3>
-  <h2>Rs. {revenueToday}</h2>
-</div>
+ <h2>Rs. {revenueToday}</h2>
+  </div>
 
 <div className="filter-buttons">
 
@@ -327,15 +386,16 @@ const revenueToday = orders
             <p>💎 {order.package}</p>
             <p>📱 {order.whatsapp}</p>
             <p>
-  🕒{" "}
-  {order.createdAt
-    ? (
-        order.createdAt.seconds
-          ? new Date(order.createdAt.seconds * 1000)
-          : new Date(order.createdAt)
-      ).toLocaleString()
-    : "No Date"}
-</p>
+                🕒{" "}
+              {order.createdAt
+              ? (
+                 order.createdAt.seconds
+               ? new Date(order.createdAt.seconds * 1000)
+               : new Date(order.createdAt)
+                    ).toLocaleString()
+                : "No Date"}
+            </p>
+            <p>📧 {order.email}</p>
 
             {/* STATUS */}
             <p

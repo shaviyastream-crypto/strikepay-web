@@ -7,18 +7,34 @@ function Navbar() {
       </div>
 
       <ul className="nav-links">
-        <li><a href="#">Home</a></li>
-        <li><a href="#">Top Up</a></li>
-        <li><a href="#">Packages</a></li>
-        <li><a href="#">Support</a></li>
-      </ul>
 
-      <button className="login-btn">
-        Login
-      </button>
+  <li>
+    <a href="#home">Home</a>
+  </li>
+
+  <li>
+    <a href="#topup">Top Up</a>
+  </li>
+
+  <li>
+    <a href="#packages">Packages</a>
+  </li>
+
+  <li>
+    <a href="#support">Support</a>
+  </li>
+
+</ul>
+
+    <button
+  className="login-btn"
+  onClick={() => scrollToSection("topup")}
+>
+  Top Up Now
+</button>
 
     </nav>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;

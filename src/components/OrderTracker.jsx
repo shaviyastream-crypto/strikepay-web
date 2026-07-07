@@ -13,16 +13,6 @@ function OrderTracker({ latestOrderId }) {
   const [loading, setLoading] = useState(false);
 
   // 📋 Copy Order ID
-  const copyOrderId = async () => {
-    if (!order) return;
-
-    try {
-      await navigator.clipboard.writeText(order.orderId);
-      alert("✅ Order ID Copied");
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   // 🔍 Check Order (Realtime)
   const checkOrder = () => {
@@ -77,7 +67,7 @@ function OrderTracker({ latestOrderId }) {
   }, [orderId]);
 
   return (
-    <section className="tracker">
+    <section id="tracker" className="tracker">
       <h2>📦 Check Order Status</h2>
 
       <input
@@ -108,38 +98,55 @@ function OrderTracker({ latestOrderId }) {
         </p>
       )}
 
-      {order && order !== "NOT_FOUND" && (
-        <div className="tracker-result">
+    {order && order !== "NOT_FOUND" && (
 
-          <div className="tracker-title">
-            <h3>{order.orderId}</h3>
+  <div className="tracker-result">
 
-            <button
-              className="copy-btn"
-              onClick={copyOrderId}
-            >
-              📋 Copy
-            </button>
-          </div>
+    <div className="tracker-title">
+      <h3>{order.orderId}</h3>
+    </div>
 
-          <p>👤 {order.playerName}</p>
-          <p>🎮 UID: {order.uid}</p>
-          <p>💎 {order.package}</p>
+    <p>👤 {order.playerName}</p>
+    <p>🎮 UID: {order.uid}</p>
+    <p>💎 {order.package}</p>
 
-          <div
-            className={`status-badge ${
-              order.status === "Completed"
-                ? "completed"
-                : order.status === "Cancelled"
-                ? "cancelled"
-                : "pending"
-            }`}
-          >
-            {order.status || "Pending"}
-          </div>
+    <div className="tracker-progress">
 
-        </div>
-      )}
+      <div
+        className={
+          order.status === "Pending" || !order.status
+            ? "step active"
+            : "step done"
+        }
+      >
+        🟡 Pending
+      </div>
+
+      <div
+        className={
+          order.status === "Completed"
+            ? "step done"
+            : "step"
+        }
+      >
+        🟢 Completed
+      </div>
+
+      <div
+        className={
+          order.status === "Cancelled"
+            ? "step cancel"
+            : "step"
+        }
+      >
+        🔴 Cancelled
+      </div>
+
+    </div>
+
+  </div>
+
+)}
     </section>
   );
 }

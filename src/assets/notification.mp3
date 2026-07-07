@@ -1,2 +1,7 @@
-// const audio = new Audio(notificationSound);
-// audio.play();
+const audio = new Audio(notificationSound);
+
+audio.volume = 1;
+
+audio.play().catch((err) => {
+  console.log(err);
+});
