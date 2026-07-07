@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { db } from "../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import emailjs from "@emailjs/browser";
 
 function TopUp({ setLatestOrderId }) {
   const [uid, setUid] = useState("");
@@ -12,9 +13,15 @@ function TopUp({ setLatestOrderId }) {
   const [paymentSlip, setPaymentSlip] = useState(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [email, setEmail] = useState("");
 
   const handleSubmit = () => {
-    if (uid === "" || gamePackage === "" || whatsapp === "") {
+    if (
+  uid === "" ||
+  gamePackage === "" ||
+  whatsapp === "" ||
+  email === ""
+) {
       setMessage("❌ Please fill all required fields.");
       return;
     }
@@ -94,11 +101,25 @@ const copyOrderId = async () => {
       playerName: playerName,
       package: gamePackage,
       whatsapp: whatsapp,
+      email: email,
       slip: slipUrl,
       status: "Pending",
       createdAt: serverTimestamp(),
 
     });
+
+    await emailjs.send(
+  "service_aplvnsj",
+  "template_omcjxmv",
+  {
+    to_email: email,
+    player_name: playerName,
+    order_id: randomId,
+    uid: uid,
+    package: gamePackage,
+  },
+  "ZwiLIZoXfEYAsk8Za"
+);
 
     await fetch("/.netlify/functions/discord", {
   method: "POST",
@@ -121,6 +142,7 @@ const copyOrderId = async () => {
     setPlayerName("");
     setGamePackage("");
     setWhatsapp("");
+    setEmail("");
     setPaymentSlip(null);
     setShowSummary(false);
 
@@ -150,6 +172,13 @@ const copyOrderId = async () => {
           placeholder="Player Name"
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
+        />
+
+        <input
+           type="email"
+           placeholder="Email Address"
+           value={email}
+           onChange={(e) => setEmail(e.target.value)}
         />
 
         <select

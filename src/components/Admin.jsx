@@ -4,7 +4,7 @@ import {
   onAuthStateChanged,
   signOut,
 } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "../firebase";
 import {
   collection,
@@ -22,8 +22,9 @@ function Admin() {
   const [search, setSearch] = useState("");
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [filter, setFilter] = useState("All");
-  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const lastOrderCount = useRef(0);
   const [notification, setNotification] = useState(null);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const navigate = useNavigate();
   const handleLogout = async () => {
   const auth = getAuth();
@@ -115,6 +116,9 @@ useEffect(() => {
   orderBy("createdAt", "desc")
 ),
     (snapshot) => {
+
+      console.log("SNAPSHOT FIRED");
+
       const orderList = snapshot.docs
   .map((doc) => ({
     id: doc.id,
@@ -123,9 +127,13 @@ useEffect(() => {
   .filter((order) => !order.archived);
 
 setOrders(orderList);
+console.log("Orders:", orderList.length);
+console.log(orderList);
 
-if (lastOrderCount !== 0 && orderList.length > lastOrderCount) {
-  const latestOrder = orderList[0];
+if (isFirstLoad) {
+  setIsFirstLoad(false);
+} else if (snapshot.docChanges().some(change => change.type === "added")) {
+
 
   console.log("NEW ORDER DETECTED", latestOrder);
 
@@ -139,7 +147,6 @@ setTimeout(() => {
 }, 5000);
 }
 
-setLastOrderCount(orderList.length);
 
     },
     (error) => {
