@@ -11,14 +11,19 @@ import {
   onSnapshot,
   query,
   orderBy,
+  addDoc,
   doc,
+  getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
+  getDocs,
 } from "firebase/firestore";
 import notificationSound from "../assets/notification.mp3";
 import emailjs from "@emailjs/browser";
 
 function Admin() {
+  const [coupons, setCoupons] = useState([]);
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedSlip, setSelectedSlip] = useState(null);
@@ -26,10 +31,77 @@ function Admin() {
   const lastOrderCount = useRef(0);
   const [notification, setNotification] = useState(null);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [announcement, setAnnouncement] = useState("");
+const [announcementActive, setAnnouncementActive] = useState(true);
+
+  const [couponCode, setCouponCode] = useState("");
+const [discount, setDiscount] = useState("");
+const [minOrder, setMinOrder] = useState("");
+const [expiry, setExpiry] = useState("");
   const navigate = useNavigate();
+  const createCoupon = async () => {
+
+  if (!couponCode || !discount) {
+    alert("Fill all required fields");
+    return;
+  }
+
+  await addDoc(collection(db, "coupons"), {
+    code: couponCode.toUpperCase(),
+    discount: Number(discount),
+    minOrder: Number(minOrder || 0),
+    expiry,
+    active: true,
+    createdAt: new Date(),
+  });
+
+  alert("✅ Coupon Created");
+
+  setCouponCode("");
+  setDiscount("");
+  setMinOrder("");
+  setExpiry("");
+
+};
+
+const deleteCoupon = async (id) => {
+
+  const ok = window.confirm(
+    "Delete this coupon?"
+  );
+
+  if (!ok) return;
+
+  await deleteDoc(doc(db, "coupons", id));
+
+  setCoupons((prev) =>
+    prev.filter((coupon) => coupon.id !== id)
+  );
+
+};
+
+const toggleCoupon = async (coupon) => {
+
+  await updateDoc(
+    doc(db, "coupons", coupon.id),
+    {
+      active: !coupon.active,
+    }
+  );
+
+  setCoupons((prev) =>
+    prev.map((c) =>
+      c.id === coupon.id
+        ? { ...c, active: !c.active }
+        : c
+    )
+  );
+
+};
+
   const handleLogout = async () => {
   const auth = getAuth();
-
+  
   try {
     await signOut(auth);
   } catch (error) {
@@ -64,18 +136,20 @@ useEffect(() => {
       console.log(order);
       console.log("EMAIL:", order.email);
   try {
-    await emailjs.send(
-      "service_aplvnsj",
-      "template_an4c8rw",
-      {
-        to_email: order.email,
-        player_name: order.playerName,
-        order_id: order.orderId,
-        uid: order.uid,
-        package: order.package,
-      },
-      "ZwiLIZoXfEYAsk8Za"
-    );
+   await emailjs.send(
+  "service_aplvnsj",
+  "template_an4c8rw",
+  {
+    to_email: order.email,
+    player_name: order.playerName,
+    order_id: order.orderId,
+    uid: order.uid,
+    package: order.package,
+    quantity: order.quantity,
+    price: order.price,
+  },
+  "ZwiLIZoXfEYAsk8Za"
+);
 
     console.log("✅ Completion email sent");
   } catch (error) {
@@ -101,6 +175,8 @@ useEffect(() => {
         playerName: order.playerName,
         uid: order.uid,
         package: order.package,
+        quantity: order.quantity,
+        price: order.price,
         status: status,
       }),
     });
@@ -192,6 +268,65 @@ useEffect(() => {
 
 }, [isFirstLoad]);
 
+useEffect(() => {
+
+  const loadCoupons = async () => {
+
+    const snapshot = await getDocs(
+      collection(db, "coupons")
+    );
+
+    setCoupons(
+      snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+    );
+
+  };
+
+  loadCoupons();
+
+}, []);
+
+const saveAnnouncement = async () => {
+
+  await setDoc(
+    doc(db, "settings", "announcement"),
+    {
+      message: announcement,
+      active: announcementActive,
+    }
+  );
+
+  alert("✅ Announcement Saved");
+
+};
+
+useEffect(() => {
+
+  const loadAnnouncement = async () => {
+
+    const snap = await getDoc(
+      doc(db, "settings", "announcement")
+    );
+
+    if (snap.exists()) {
+
+      setAnnouncement(snap.data().message);
+
+      setAnnouncementActive(
+        snap.data().active
+      );
+
+    }
+
+  };
+
+  loadAnnouncement();
+
+}, []);
+
 const packagePrices = {
   "50 + 6 Golds": 175,
   "100 + 16 Golds": 350,
@@ -216,22 +351,13 @@ const cancelled = orders.filter(
   (o) => o.status === "Cancelled"
 ).length;
 
-const revenue = orders .
-filter((o) => o.status === "Completed") 
-.reduce((total, order) => { 
-  const price = Number( 
-    order.package?.match(/\d+/g)?.pop() || 0 ); 
-    return total + price; }, 0);
+const revenue = orders.reduce((total, order) => {
+  if (order.status !== "Completed") return total;
 
-    const totalRevenue = orders.reduce((total, order) => {
   const price = packagePrices[order.package] || 0;
   const quantity = order.quantity || 1;
 
-  if (order.status === "Completed") {
-    return total + price * quantity;
-  }
-
-  return total;
+  return total + price * quantity;
 }, 0);
 
 const today = new Date().toDateString();
@@ -249,6 +375,7 @@ const ordersToday = orders.filter((order) => {
 
 const revenueToday = orders
   .filter((order) => {
+
     if (!order.createdAt) return false;
 
     const date =
@@ -260,17 +387,57 @@ const revenueToday = orders
       date.toDateString() === today &&
       order.status === "Completed"
     );
+
   })
-  .reduce((total, order) => { 
-    const price = Number( order.package?.match(/\d+/g)?.pop() || 0 ); 
-    return total + price; }, 0)
+  .reduce((total, order) => {
+
+    const price = packagePrices[order.package] || 0;
+
+    const quantity = order.quantity || 1;
+
+    return total + price * quantity;
+
+  },0);
+
+  const totalCustomers = new Set(
+  orders
+    .filter(order => order.email)
+    .map(order => order.email)
+).size;
+
+const packageStats = {};
+
+orders.forEach((order) => {
+
+  if (order.status !== "Completed") return;
+
+  if (!packageStats[order.package]) {
+    packageStats[order.package] = 0;
+  }
+
+  packageStats[order.package] += order.quantity || 1;
+
+});
+
+const mostSoldPackage =
+  Object.entries(packageStats).sort(
+    (a, b) => b[1] - a[1]
+  )[0];
+
+const pendingOrders = orders.filter(
+  (order) =>
+    (order.status || "Pending") === "Pending"
+).length;
 
   return (
+
+
 
 
     <section className="admin">
 
       <div className="admin-header">
+
 
   <div>
     <h2>🩸 StrikePay Admin</h2>
@@ -283,6 +450,157 @@ const revenueToday = orders
   >
     🚪 Logout
   </button>
+
+
+</div>
+
+<hr style={{ margin: "40px 0" }} />
+
+<h2>📢 Announcement</h2>
+
+<div className="coupon-form">
+
+  <input
+    type="text"
+    placeholder="Announcement Message"
+    value={announcement}
+    onChange={(e) =>
+      setAnnouncement(e.target.value)
+    }
+  />
+
+  <label>
+
+    <input
+      type="checkbox"
+      checked={announcementActive}
+      onChange={(e) =>
+        setAnnouncementActive(
+          e.target.checked
+        )
+      }
+    />
+
+    Active
+
+  </label>
+
+  <button onClick={saveAnnouncement}>
+    Save
+  </button>
+
+</div>
+
+<hr style={{ margin: "40px 0" }} />
+
+<h2>🎟 Coupon Manager</h2>
+
+<div className="coupon-form">
+
+  <input
+  type="text"
+  placeholder="Coupon Code"
+  value={couponCode}
+  onChange={(e)=>setCouponCode(e.target.value)}
+/>
+
+  <input
+  type="number"
+  placeholder="Discount (Rs)"
+  value={discount}
+  onChange={(e)=>setDiscount(e.target.value)}
+/>
+
+  <input
+  type="number"
+  placeholder="Minimum Order"
+  value={minOrder}
+  onChange={(e)=>setMinOrder(e.target.value)}
+/>
+
+  <input
+  type="date"
+  value={expiry}
+  onChange={(e)=>setExpiry(e.target.value)}
+/>
+  <button onClick={createCoupon}>
+  Create Coupon
+</button>
+
+</div>
+
+<h3 style={{ marginTop: "30px" }}>
+  🎟 Available Coupons
+</h3>
+
+<div className="coupon-list">
+
+  {coupons.length === 0 ? (
+
+    <p>No Coupons Found</p>
+
+  ) : (
+
+    coupons.map((coupon) => (
+
+      <div
+        key={coupon.id}
+        className="coupon-card"
+      >
+
+        <h3>{coupon.code}</h3>
+
+        <p>
+          💰 Discount :
+          Rs. {coupon.discount}
+        </p>
+
+        <p>
+          🛒 Min Order :
+          Rs. {coupon.minOrder}
+        </p>
+
+        <p>
+          📅 Expiry :
+          {coupon.expiry}
+        </p>
+
+        <p
+          style={{
+            color: coupon.active
+              ? "#22c55e"
+              : "#ef4444",
+            fontWeight: "bold",
+          }}
+        >
+          {coupon.active
+            ? "🟢 Active"
+            : "🔴 Disabled"}
+        </p>
+
+        <button
+  className="toggle-coupon-btn"
+  onClick={() => toggleCoupon(coupon)}
+>
+  {coupon.active
+    ? "🔴 Disable"
+    : "🟢 Enable"}
+</button>
+
+        <button
+  className="delete-coupon-btn"
+  onClick={() => deleteCoupon(coupon.id)}
+>
+  🗑 Delete
+</button>
+
+      </div>
+
+    ))
+
+  )}
+
+
 
 </div>
 
@@ -309,13 +627,6 @@ const revenueToday = orders
     <h2>Rs. {revenue}</h2>
   </div>
 
-  <div className="stat-card">
-  <h3>Total Revenue</h3>
-  <h2>
-    Rs. {totalRevenue.toLocaleString()}
-  </h2>
-</div>
-
 </div>
 
 <div className="stat-card">
@@ -327,6 +638,26 @@ const revenueToday = orders
   <h3>💰 Today Revenue</h3>
  <h2>Rs. {revenueToday}</h2>
   </div>
+
+  <div className="stat-card">
+  <h3>👥 Customers</h3>
+  <h2>{totalCustomers}</h2>
+</div>
+
+<div className="stat-card">
+  <h3>🔥 Most Sold</h3>
+  <h2>
+    {mostSoldPackage
+      ? mostSoldPackage[0]
+      : "-"}
+  </h2>
+</div>
+
+<div className="stat-card">
+  <h3>📦 Pending Orders</h3>
+  <h2>{pendingOrders}</h2>
+</div>
+
 
 <div className="filter-buttons">
 
@@ -348,14 +679,15 @@ const revenueToday = orders
 
 </div>
 
+
       {/* SEARCH */}
       <input
-        type="text"
-        placeholder="Search Order ID, UID, Player..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="search-box"
-      />
+  type="text"
+  className="admin-search"
+  placeholder="🔍 Search Order ID / UID / Player..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+/>
 
       {/* ORDERS */}
       {orders
@@ -384,6 +716,31 @@ const revenueToday = orders
             <p>👤 {order.playerName}</p>
             <p>🎮 UID: {order.uid}</p>
             <p>💎 {order.package}</p>
+            <p>📦 Quantity: {order.quantity || 1}</p>
+
+<p>
+  💰 Original Price:
+  Rs. {order.originalPrice?.toLocaleString() || order.price?.toLocaleString()}
+</p>
+
+{order.coupon && (
+  <p>
+    🎟 Coupon: {order.coupon}
+  </p>
+)}
+
+{order.discount > 0 && (
+  <p>
+    💸 Discount:
+    Rs. {order.discount.toLocaleString()}
+  </p>
+)}
+
+<p>
+  ✅ Paid Price:
+  Rs. {order.price?.toLocaleString()}
+</p>
+
             <p>📱 {order.whatsapp}</p>
             <p>
                 🕒{" "}

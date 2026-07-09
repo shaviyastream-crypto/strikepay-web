@@ -2,21 +2,32 @@ function Footer() {
   return (
     <footer className="footer" id="support">
 
-      <h2>StrikePay LK</h2>
+      <h2>🎮 StrikePay LK</h2>
 
       <p>
-        Sri Lanka's Trusted Blood Strike Top Up Store.
+        Fast, Safe & Trusted Blood Strike Top Up Service
+          in Sri Lanka.
       </p>
 
       <div className="footer-links">
 
-        <a href="#">Home</a>
+        <a href="#home">Home</a>
 
-        <a href="#">Top Up</a>
+        <a href="#packages">Packages</a>
 
-        <a href="#">Contact</a>
+        <a href="#topup">Top Up</a>
 
-        <a href="#">Support</a>
+        <a href="#tracker">Order Tracker</a>
+
+      </div>
+
+      <div className="footer-contact">
+
+        <p>📧 shaviduprabash90@gmail.com</p>
+
+        <p>💬 WhatsApp: +94 77 556 3728</p>
+
+        <p>🕒 Support: 8.00 AM - 10.00 PM</p>
 
       </div>
 

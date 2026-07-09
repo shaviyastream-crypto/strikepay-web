@@ -1,0 +1,67 @@
+import { useState } from "react";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
+function CustomerLogin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    const auth = getAuth();
+
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      alert("✅ Login Successful!");
+
+      setEmail("");
+      setPassword("");
+
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  return (
+    <section className="login">
+
+      <h2>Sign In</h2>
+
+      <input
+        type="email"
+        placeholder="Enter Email"
+        value={email}
+        onChange={(e) =>
+          setEmail(e.target.value)
+        }
+      />
+
+      <input
+        type="password"
+        placeholder="Enter Password"
+        value={password}
+        onChange={(e) =>
+          setPassword(e.target.value)
+        }
+      />
+
+      <button
+        className="login-btn"
+        onClick={handleLogin}
+      >
+        Sign In
+      </button>
+
+    
+
+    </section>
+  );
+}
+
+export default CustomerLogin;

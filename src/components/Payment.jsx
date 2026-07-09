@@ -1,7 +1,7 @@
 function Payment() {
 
 const copyAccount = async () => {
-  await navigator.clipboard.writeText("1234567890");
+  await navigator.clipboard.writeText("83094373");
   alert("✅ Account Number Copied");
 };
 

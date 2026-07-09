@@ -1,12 +1,51 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  doc,
+  setDoc,
+  serverTimestamp,
+  getDocs,
+  onSnapshot,
+} from "firebase/firestore";
 import emailjs from "@emailjs/browser";
+emailjs.init("ZwiLIZoXfEYAsk8Za");
 
 function TopUp({
   setLatestOrderId,
   selectedPackage,
 }) {
+
+    const [announcement, setAnnouncement] = useState("");
+    const [announcementActive, setAnnouncementActive] = useState(false);
+
+    useEffect(() => {
+
+  const unsubscribe = onSnapshot(
+    doc(db, "settings", "announcement"),
+    (snap) => {
+
+      if (snap.exists()) {
+
+        setAnnouncement(
+          snap.data().message
+        );
+
+        setAnnouncementActive(
+          snap.data().active
+        );
+
+      }
+
+    }
+  );
+
+  return () => unsubscribe();
+
+}, []);
+
+
   const [uid, setUid] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [gamePackage, setGamePackage] = useState("");
@@ -21,6 +60,11 @@ function TopUp({
   const [quantity, setQuantity] = useState(1);
   const [totalGold, setTotalGold] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponMessage, setCouponMessage] = useState("");
+
 
 useEffect(() => {
   if (selectedPackage) {
@@ -90,6 +134,86 @@ useEffect(() => {
   }
 
 }, [gamePackage, quantity]);
+
+const finalPrice = Math.max(
+  totalPrice - couponDiscount,
+  0
+);
+
+const handleApplyCoupon = async () => {
+
+  if (!couponCode) {
+    setCouponMessage("Enter coupon code");
+    return;
+  }
+
+  try {
+
+    const snapshot = await getDocs(
+      collection(db, "coupons")
+    );
+
+    const coupon = snapshot.docs
+      .map((doc)=>({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .find(
+        (c)=>c.code === couponCode.toUpperCase()
+      );
+
+
+    if (!coupon) {
+      setCouponMessage("❌ Invalid Coupon");
+      setCouponDiscount(0);
+      return;
+    }
+
+
+    if (!coupon.active) {
+      setCouponMessage("❌ Coupon Disabled");
+      return;
+    }
+
+
+    const today = new Date();
+    const expiryDate = new Date(coupon.expiry);
+
+
+    if (expiryDate < today) {
+      setCouponMessage("❌ Coupon Expired");
+      return;
+    }
+
+
+    if (totalPrice < coupon.minOrder) {
+
+      setCouponMessage(
+        `Minimum order Rs.${coupon.minOrder}`
+      );
+
+      return;
+
+    }
+
+
+    setCouponDiscount(coupon.discount);
+    setCouponApplied(true);
+
+    setCouponMessage(
+      `✅ Coupon Applied - Rs.${coupon.discount} OFF`
+    );
+
+
+  }catch(error){
+
+  console.error("Coupon Error:", error);
+
+  setCouponMessage(error.message);
+
+}
+
+};
 
   const handleSubmit = () => {
     if (
@@ -164,29 +288,59 @@ const copyOrderId = async () => {
 
   const randomId = "SP-" + Math.floor(1000 + Math.random() * 9000);
 
-  setOrderId(randomId);
-  setLatestOrderId(randomId);
-  setOrderSuccess(true);
-  setLoading(true);
+setOrderId(randomId);
+setLatestOrderId(randomId);
 
+setLoading(true);
   try {
 
     const slipUrl = await uploadSlip();
 
     await addDoc(collection(db, "orders"), {
-  orderId: randomId,
-  uid: uid,
-  playerName: playerName,
-  email: email,
-  package: gamePackage,
-  quantity: quantity,
-  whatsapp: whatsapp,
-  slip: slipUrl,
-  status: "Pending",
-  createdAt: serverTimestamp(),
-});
 
-    await emailjs.send(
+  orderId: randomId,
+
+  uid: uid,
+
+  playerName: playerName,
+
+  email: email,
+
+  package: gamePackage,
+
+  quantity: quantity,
+
+
+  // Original price
+  originalPrice: totalPrice,
+
+
+  // Discount
+  discount: couponDiscount,
+
+
+  // Coupon name
+  coupon: couponApplied
+    ? couponCode.toUpperCase()
+    : "",
+
+
+  // Final price after discount
+  price: finalPrice,
+
+
+  whatsapp: whatsapp,
+
+  slip: slipUrl,
+
+  status: "Pending",
+
+  createdAt: serverTimestamp(),
+
+});
+    try {
+
+await emailjs.send(
   "service_aplvnsj",
   "template_omcjxmv",
   {
@@ -195,11 +349,21 @@ const copyOrderId = async () => {
     order_id: randomId,
     uid: uid,
     package: gamePackage,
+    quantity: quantity,
+    price: finalPrice,
     whatsapp: whatsapp,
   },
   "ZwiLIZoXfEYAsk8Za"
 );
 
+console.log("Email Sent");
+
+}
+catch(emailError){
+
+console.log("Email Failed:", emailError);
+
+}
 
     const discordRes = await fetch("/.netlify/functions/discord", {
   method: "POST",
@@ -212,6 +376,15 @@ const copyOrderId = async () => {
   playerName,
   package: gamePackage,
   quantity,
+  price: finalPrice,
+
+originalPrice: totalPrice,
+
+discount: couponDiscount,
+
+coupon: couponApplied
+  ? couponCode.toUpperCase()
+  : "",
   whatsapp,
   slip: slipUrl,
 }),
@@ -220,6 +393,8 @@ const copyOrderId = async () => {
 console.log("Discord:", discordRes.status);
 
     setOrderSuccess(true);
+
+    setShowSummary(false);
 
     setUid("");
     setPlayerName("");
@@ -230,12 +405,26 @@ console.log("Discord:", discordRes.status);
     setShowSummary(false);
     setLoading(false);
     setQuantity(1);
+    setCouponCode("");
+    setCouponDiscount(0);
+    setCouponApplied(false);
+    setCouponMessage("");
 
 } 
   
   catch (error) {
+
   console.error("ERROR:", error);
-  alert(error.text || error.message);
+
+  alert(
+    "Order saved successfully, but email notification failed."
+  );
+
+}
+finally {
+
+  setLoading(false);
+
 }
 
 };
@@ -244,6 +433,15 @@ console.log("Discord:", discordRes.status);
   className="topup"
   id="topup"
 >
+  {announcementActive && announcement && (
+
+  <div className="announcement-banner">
+
+    📢 {announcement}
+
+  </div>
+
+)}
       <h2>Blood Strike Top Up</h2>
 
       <form className="topup-form">
@@ -346,6 +544,27 @@ console.log("Discord:", discordRes.status);
           onChange={(e) => setWhatsapp(e.target.value)}
         />
 
+        <input
+  type="text"
+  placeholder="Coupon Code (Optional)"
+  value={couponCode}
+  onChange={(e) => setCouponCode(e.target.value)}
+/>
+
+<button
+  type="button"
+  className="apply-coupon-btn"
+  onClick={handleApplyCoupon}
+>
+  Apply Coupon
+</button>
+
+{couponMessage && (
+  <p className="coupon-message">
+    {couponMessage}
+  </p>
+)}
+
         <button
           type="button"
           onClick={handleSubmit}
@@ -369,6 +588,43 @@ console.log("Discord:", discordRes.status);
           <p><b>Package:</b> {gamePackage}</p>
           <p><b>WhatsApp:</b> {whatsapp}</p>
           <p><b>Quantity:</b> {quantity}</p>
+
+          <div className="price-summary">
+
+  <p>
+    💰 Original Price:
+    <b> Rs. {totalPrice.toLocaleString()}</b>
+  </p>
+
+
+  {couponApplied && (
+    <>
+      <p>
+        🎟 Coupon:
+        <b> {couponCode.toUpperCase()}</b>
+      </p>
+
+      <p>
+        💸 Discount:
+        <b> - Rs. {couponDiscount.toLocaleString()}</b>
+      </p>
+    </>
+  )}
+
+
+  <hr />
+
+
+  <h3>
+    ✅ Final Price:
+    Rs. {Math.max(
+      totalPrice - couponDiscount,
+      0
+    ).toLocaleString()}
+  </h3>
+
+</div>
+
 
           <input
             type="file"

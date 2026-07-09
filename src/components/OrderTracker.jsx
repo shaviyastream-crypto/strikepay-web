@@ -98,6 +98,8 @@ function OrderTracker({ latestOrderId }) {
         </p>
       )}
 
+      
+
     {order && order !== "NOT_FOUND" && (
 
   <div className="tracker-result">
@@ -109,6 +111,11 @@ function OrderTracker({ latestOrderId }) {
     <p>👤 {order.playerName}</p>
     <p>🎮 UID: {order.uid}</p>
     <p>💎 {order.package}</p>
+    {order.quantity > 1 && (
+  <p>
+    📦 Quantity: {order.quantity}
+  </p>
+)}
 
     <div className="tracker-progress">
 

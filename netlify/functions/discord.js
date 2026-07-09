@@ -39,6 +39,16 @@ export async function handler(event) {
               inline: false,
             },
             {
+  name: "📦 Quantity",
+  value: String(data.quantity || 1),
+  inline: true,
+},
+{
+  name: "💰 Total Price",
+  value: `Rs. ${Number(data.price || 0).toLocaleString()}`,
+  inline: true,
+},
+            {
               name: "📱 WhatsApp",
               value: data.whatsapp,
               inline: false,
@@ -82,6 +92,10 @@ export async function handler(event) {
       statusCode: 500,
       body: JSON.stringify({
         error: err.message,
+
+        price: finalPrice,
+discount: couponDiscount,
+coupon: couponCode,
       }),
     };
   }

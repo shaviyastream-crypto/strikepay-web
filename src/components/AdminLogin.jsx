@@ -33,6 +33,14 @@ function Login() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+
+      <button
+  className="login-btn"
+  onClick={handleLogin}
+>
+  Login
+</button>
+
     </section>
   );
 }
